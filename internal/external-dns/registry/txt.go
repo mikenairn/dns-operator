@@ -140,7 +140,7 @@ func (im *TXTRegistry) Records(ctx context.Context) ([]*endpoint.Endpoint, error
 			return nil, err
 		}
 
-		endpointName, recordType := im.mapper.fromTXTName(record.DNSName)
+		endpointName, recordType, _ := im.mapper.fromTXTName(record.DNSName)
 		key := endpoint.EndpointKey{
 			DNSName:       endpointName,
 			RecordType:    recordType,
@@ -216,7 +216,7 @@ func (im *TXTRegistry) generateTXTRecord(r *endpoint.Endpoint) []*endpoint.Endpo
 	if isAlias, found := r.GetProviderSpecificProperty("alias"); found && isAlias == "true" && recordType == endpoint.RecordTypeA {
 		recordType = endpoint.RecordTypeCNAME
 	}
-	txt := endpoint.NewEndpoint(im.mapper.toTXTName(r.DNSName, recordType), endpoint.RecordTypeTXT, r.Labels.Serialize(true, im.txtEncryptEnabled, im.txtEncryptAESKey))
+	txt := endpoint.NewEndpoint(im.mapper.toTXTName(r.DNSName, recordType, im.ownerID), endpoint.RecordTypeTXT, r.Labels.Serialize(true, im.txtEncryptEnabled, im.txtEncryptAESKey))
 	if txt != nil {
 		txt.WithSetIdentifier(r.SetIdentifier)
 		txt.Labels[endpoint.OwnedRecordLabelKey] = r.DNSName
@@ -318,6 +318,6 @@ func (im *TXTRegistry) removeFromCache(ep *endpoint.Endpoint) {
 */
 
 type nameMapper interface {
-	fromTXTName(string) (endpointName string, recordType string)
-	toTXTName(string, string) string
+	fromTXTName(string) (endpointName string, recordType string, uid string)
+	toTXTName(string, string, string) string
 }

@@ -83,12 +83,13 @@ func (pr affixNameMapper) isSuffix() bool {
 	return len(pr.prefix) == 0 && len(pr.suffix) > 0
 }
 
-func (pr affixNameMapper) fromTXTName(txtDNSName string) (endpointName string, recordType string) {
+func (pr affixNameMapper) fromTXTName(txtDNSName string) (endpointName string, recordType, uid string) {
 	lowerDNSName := strings.ToLower(txtDNSName)
 
 	// drop prefix
 	if pr.isPrefix() {
-		return pr.dropAffixExtractType(lowerDNSName)
+		r, rType := pr.dropAffixExtractType(lowerDNSName)
+		return r, rType, ""
 	}
 
 	// drop suffix
@@ -98,9 +99,9 @@ func (pr affixNameMapper) fromTXTName(txtDNSName string) (endpointName string, r
 		domainWithSuffix := strings.Join(DNSName[:1+dc], ".")
 
 		r, rType := pr.dropAffixExtractType(domainWithSuffix)
-		return r + "." + DNSName[1+dc], rType
+		return r + "." + DNSName[1+dc], rType, ""
 	}
-	return "", ""
+	return "", "", ""
 }
 
 func (pr affixNameMapper) recordTypeInAffix() bool {
@@ -120,7 +121,7 @@ func (pr affixNameMapper) normalizeAffixTemplate(afix, recordType string) string
 	return afix
 }
 
-func (pr affixNameMapper) toTXTName(endpointDNSName, recordType string) string {
+func (pr affixNameMapper) toTXTName(endpointDNSName, recordType, _ string) string {
 	DNSName := strings.SplitN(endpointDNSName, ".", 2)
 	recordType = strings.ToLower(recordType)
 	recordT := recordType + "-"
