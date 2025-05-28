@@ -140,7 +140,7 @@ func (im *TXTRegistry) Records(ctx context.Context) ([]*endpoint.Endpoint, error
 			return nil, err
 		}
 
-		endpointName, recordType := im.mapper.toEndpointName(record.DNSName)
+		endpointName, recordType := im.mapper.fromTXTName(record.DNSName)
 		key := endpoint.EndpointKey{
 			DNSName:       endpointName,
 			RecordType:    recordType,
@@ -207,34 +207,21 @@ func (im *TXTRegistry) Records(ctx context.Context) ([]*endpoint.Endpoint, error
 	return endpoints, nil
 }
 
-// generateTXTRecord generates both "old" and "new" TXT records.
-// Once we decide to drop old format we need to drop toTXTName() and rename toNewTXTName
+// generateTXTRecord generates a TXT registry racord using the current name mapper
 func (im *TXTRegistry) generateTXTRecord(r *endpoint.Endpoint) []*endpoint.Endpoint {
 	endpoints := make([]*endpoint.Endpoint, 0)
 
-	//mnairn: Seems to be no way to prevent the creation of the old format TXT records other than removing the code
-	//if !im.txtEncryptEnabled && !im.mapper.recordTypeInAffix() && r.RecordType != endpoint.RecordTypeAAAA {
-	//	// old TXT record format
-	//	txt := endpoint.NewEndpoint(im.mapper.toTXTName(r.DNSName), endpoint.RecordTypeTXT, r.Labels.Serialize(true, im.txtEncryptEnabled, im.txtEncryptAESKey))
-	//	if txt != nil {
-	//		txt.WithSetIdentifier(r.SetIdentifier)
-	//		txt.Labels[endpoint.OwnedRecordLabelKey] = r.DNSName
-	//		txt.ProviderSpecific = r.ProviderSpecific
-	//		endpoints = append(endpoints, txt)
-	//	}
-	//}
-	// new TXT record format (containing record type)
 	recordType := r.RecordType
 	// AWS Alias records are encoded as type "cname"
 	if isAlias, found := r.GetProviderSpecificProperty("alias"); found && isAlias == "true" && recordType == endpoint.RecordTypeA {
 		recordType = endpoint.RecordTypeCNAME
 	}
-	txtNew := endpoint.NewEndpoint(im.mapper.toNewTXTName(r.DNSName, recordType), endpoint.RecordTypeTXT, r.Labels.Serialize(true, im.txtEncryptEnabled, im.txtEncryptAESKey))
-	if txtNew != nil {
-		txtNew.WithSetIdentifier(r.SetIdentifier)
-		txtNew.Labels[endpoint.OwnedRecordLabelKey] = r.DNSName
-		txtNew.ProviderSpecific = r.ProviderSpecific
-		endpoints = append(endpoints, txtNew)
+	txt := endpoint.NewEndpoint(im.mapper.toTXTName(r.DNSName, recordType), endpoint.RecordTypeTXT, r.Labels.Serialize(true, im.txtEncryptEnabled, im.txtEncryptAESKey))
+	if txt != nil {
+		txt.WithSetIdentifier(r.SetIdentifier)
+		txt.Labels[endpoint.OwnedRecordLabelKey] = r.DNSName
+		txt.ProviderSpecific = r.ProviderSpecific
+		endpoints = append(endpoints, txt)
 	}
 
 	return endpoints
@@ -331,8 +318,6 @@ func (im *TXTRegistry) removeFromCache(ep *endpoint.Endpoint) {
 */
 
 type nameMapper interface {
-	toEndpointName(string) (endpointName string, recordType string)
-	toTXTName(string) string
-	toNewTXTName(string, string) string
-	recordTypeInAffix() bool
+	fromTXTName(string) (endpointName string, recordType string)
+	toTXTName(string, string) string
 }

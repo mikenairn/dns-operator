@@ -1370,7 +1370,7 @@ func TestToEndpointNameNewTXT(t *testing.T) {
 			txtDomain := tc.mapper.toNewTXTName(tc.domain, tc.recordType)
 			assert.Equal(t, tc.txtDomain, txtDomain)
 
-			domain, _ := tc.mapper.toEndpointName(txtDomain)
+			domain, _ := tc.mapper.fromTXTName(txtDomain)
 			assert.Equal(t, tc.domain, domain)
 		})
 	}
