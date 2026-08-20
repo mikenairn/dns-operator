@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - main
+      - "component-chart-sync"
     paths:
       - 'charts/**'
 
@@ -30,7 +31,7 @@ jobs:
             PR_URL=$(echo "$PR_JSON" | jq -r '.html_url')
             PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
             APPROVER=$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" --paginate --slurp \
-              --jq 'flatten | [.[] | select(.state == "APPROVED")] | sort_by(.submitted_at) | last | .user.login // empty')
+              | jq -r 'flatten | [.[] | select(.state == "APPROVED")] | sort_by(.submitted_at) | last | .user.login // empty')
           else
             AUTHOR="$ACTOR"
             PR_URL=""
@@ -45,7 +46,7 @@ jobs:
       - uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
         with:
           token: ${{ secrets.KUADRANT_DEV_PAT }}
-          repository: Kuadrant/kuadrant-operator
+          repository: mikenairn/kuadrant-operator
           event-type: component-chart-sync
           client-payload: >-
             {
