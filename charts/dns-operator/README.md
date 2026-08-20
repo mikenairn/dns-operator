@@ -21,3 +21,5 @@ helm install \
 Read the documentation and user guides in the [Getting Started guide](https://github.com/Kuadrant/dns-operator/?tab=readme-ov-file#getting-started).
 
 Random update for test
+
+Another update
